@@ -518,7 +518,7 @@
     </header>
     <div class="content" id="mainContent">
       <div class="welcome">
-        <div class="welcome-icon">🪴</div>
+        <div class="welcome-icon">🌱</div>
         <h2>开始记录你的植物</h2>
         <p>添加你的第一株植物，记录每次浇水和生长变化，再也不会忘记了。</p>
         <button class="btn btn-primary" onclick="openAddModal()">添加第一株植物</button>
@@ -688,7 +688,7 @@ async function initAuth() {
 //  字段映射：water_interval↔waterInterval, created_at↔added
 // ══════════════════════════════════════════════
 
-const EMOJIS = ['🌵','🌿','🍀','🌸','🌺','🌻','🌹','🌷','🎋','🎍','🍃','🌱','🪴','🌾','🌳','🌴','🍄','🌲','🌼','🌻','🥀','🪷','🌞','🍁','🍂','🌰','🎄','🎃','🌊','🦋'];
+const EMOJIS = ['🌵','🌿','🍀','🌸','🌺','🌻','🌹','🌷','🎋','🎍','🍃','🌱','🌾','🌳','🌴','🍄','🌲','🌼','🥀','🍁','🍂'];
 let plants = [];
 let selectedId = null;
 let selectedEmoji = '🌱';
@@ -798,7 +798,7 @@ function renderDetail() {
     titleEl.textContent = '植物日记';
     actions.innerHTML = '';
     content.innerHTML = `<div class="welcome">
-      <div class="welcome-icon">🪴</div>
+      <div class="welcome-icon">🌱</div>
       <h2>开始记录你的植物</h2>
       <p>在左侧选择植物，或添加新的植物开始记录。</p>
       <button class="btn btn-primary" onclick="openAddModal()">添加植物</button>
