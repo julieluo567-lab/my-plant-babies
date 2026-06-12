@@ -198,6 +198,8 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 40px;
     flex-shrink: 0;
+    transition: filter 0.2s, border-color 0.2s;
+    border: 2px solid transparent;
   }
   .plant-meta { flex: 1; }
   .plant-meta h2 { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
@@ -454,6 +456,31 @@
     background: rgba(0,0,0,0.06); padding: 1px 5px;
     border-radius: 3px; font-size: 11px;
   }
+
+  /* ── Tamagotchi Mode ── */
+  .mood-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 400;
+  }
+  .mood-happy   { background: var(--green-100); color: var(--green-700); }
+  .mood-thirsty { background: var(--amber-50); color: var(--amber-700); }
+  .mood-overdue { background: var(--red-50); color: var(--red-700); }
+
+  .plant-avatar.overdue {
+    filter: grayscale(50%);
+    border-color: var(--red-400);
+  }
+  .plant-avatar.overdue .pa-emoji {
+    display: inline-block;
+    animation: wilt 2s ease-in-out infinite alternate;
+  }
+  @keyframes wilt {
+    from { transform: rotate(0deg); opacity: 1; }
+    to   { transform: rotate(8deg); opacity: 0.7; }
+  }
+
+  .si-mood { font-size: 13px; margin-left: 4px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -765,6 +792,31 @@ function waterStatus(p) {
   return { label:`已超期 ${days - p.waterInterval} 天`, cls:'overdue' };
 }
 
+// ── Tamagotchi Mode: 根据浇水间隔计算植物心情 ──
+function getPlantStatus(lastWateredDate, wateringInterval) {
+  const last = new Date(lastWateredDate);
+  const now = new Date();
+  last.setHours(0,0,0,0);
+  now.setHours(0,0,0,0);
+
+  const daysSinceLastWatered = Math.floor((now - last) / 86400000);
+
+  if (daysSinceLastWatered < wateringInterval) {
+    return { mood: 'happy', emoji: '😊', label: '开心', daysSinceLastWatered };
+  } else if (daysSinceLastWatered === wateringInterval) {
+    return { mood: 'thirsty', emoji: '😐', label: '该浇水了', daysSinceLastWatered };
+  } else {
+    return { mood: 'overdue', emoji: '💀', label: '已枯萎', daysSinceLastWatered };
+  }
+}
+
+// 基于现有 logs/water_interval 推算心情，无需额外的 lastWatered 字段
+function plantMood(p) {
+  const wl = p.logs.filter(l => l.type === 'water');
+  const lastDate = wl.length ? wl[wl.length-1].date : p.added;
+  return getPlantStatus(lastDate, p.waterInterval);
+}
+
 function renderSidebar() {
   const list = document.getElementById('sidebarList');
   if (!plants.length) { list.innerHTML = '<div style="padding:16px 24px;font-size:12px;color:rgba(255,255,255,0.3)">还没有植物</div>'; return; }
@@ -772,12 +824,14 @@ function renderSidebar() {
   list.innerHTML = '<div class="sidebar-section-label">我的植物</div>' +
     plants.map(p => {
       const ws = waterStatus(p);
+      const mood = plantMood(p);
       return `<div class="sidebar-item${p.id===selectedId?' active':''}" onclick="selectPlant('${p.id}')">
         <span class="si-emoji">${p.emoji}</span>
         <div class="si-info">
           <div class="si-name">${p.name}</div>
           <div class="si-status ${clsMap[ws.cls]}">${ws.label}</div>
         </div>
+        <span class="si-mood">${mood.emoji}</span>
       </div>`;
     }).join('');
 }
@@ -813,6 +867,7 @@ function renderDetail() {
     <button class="btn btn-danger" onclick="deletePlant('${p.id}')">删除</button>`;
 
   const ws = waterStatus(p);
+  const mood = plantMood(p);
   const badgeCls = { ok:'badge-ok', soon:'badge-soon', overdue:'badge-overdue' };
   const lastWater = p.logs.filter(l=>l.type==='water').slice(-1)[0];
   const totalWater = p.logs.filter(l=>l.type==='water').length;
@@ -835,12 +890,15 @@ function renderDetail() {
 
   content.innerHTML = `
     <div class="plant-hero">
-      <div class="plant-avatar">${p.emoji}</div>
+      <div class="plant-avatar${mood.mood === 'overdue' ? ' overdue' : ''}">
+        <span class="pa-emoji">${p.emoji}</span>
+      </div>
       <div class="plant-meta">
         <h2>${p.name}</h2>
         <div class="species">${p.species}</div>
         <div class="plant-badges">
           <span class="badge ${badgeCls[ws.cls]}">${ws.label}</span>
+          <span class="badge mood-${mood.mood}">${mood.emoji} ${mood.label}</span>
           <span class="badge badge-interval">每 ${p.waterInterval} 天浇一次</span>
           <span class="badge badge-interval">养了 ${daysSince(p.added)} 天</span>
         </div>
